@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QFile>
 #include <QStringList>
+#include <QTextStream>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -47,7 +48,13 @@ QString MainWindow::cueSheet(const TagLib::MPEG::File *pFile, int numb)
     title  = title.replace("\"", "\\\"").trimmed();
     artist = artist.replace("\"", "\\\"").trimmed();
 
-    QString s = QString("FILE \"%1\" MP3\n").arg(pFile->name());
+    QString fileName = QString::fromUtf8(pFile->name().toString().toCString(true));
+
+#ifdef Q_OS_WIN
+    fileName.replace("/", "\\");
+#endif
+
+    QString s = QString("FILE \"%1\" MP3\n").arg(fileName);
     s += QString("    TRACK %1 AUDIO\n").arg(numb, 2, 10, QChar('0'));
 
     if (!title.isEmpty())
@@ -80,6 +87,7 @@ void MainWindow::on_pushOpenFolder_clicked()
 
     if (!dir.isEmpty())
     {
+        ui->lineSrcFolder->setText(dir);
         cleanTags();
 
         QDir mp3Dir(dir, "*.mp3");
@@ -154,28 +162,39 @@ void MainWindow::on_buttonBox_accepted()
         QStringList content = ui->plainTextEdit->toPlainText().split("\n");
 
         int numb = 0;
-        QFile* pCue = new QFile(QString("%1%2.%3").arg(tmpl).arg(++numb).arg(fInfo.suffix()));
-        if (!pCue->open(QIODevice::Text | QIODevice::Truncate | QIODevice::WriteOnly))
-        {
-            return;
-        }
+        QFile* pCue = NULL;
+        QTextStream ts;
 
         for (int i = 0; i < content.count(); i++)
         {
+            if (!pCue)
+            {
+                if ((pCue = new QFile(QString("%1%2.%3").arg(tmpl).arg(++numb).arg(fInfo.suffix()))))
+                {
+                    if (!pCue->open(QIODevice::Text | QIODevice::Truncate | QIODevice::WriteOnly))
+                    {
+                        delete pCue;
+                        pCue = NULL;
+                        break;
+                    }
+                    else
+                    {
+                        ts.setDevice(pCue);
+                        ts.setCodec("UTF-8");
+                        // ts.setGenerateByteOrderMark(true);
+                    }
+                }
+            }
+
             if (content.at(i).contains("--------------"))
             {
                 pCue->close();
                 delete pCue;
-                pCue = new QFile(QString("%1%2.%3").arg(tmpl).arg(++numb).arg(fInfo.suffix()));
-                if (!pCue->open(QIODevice::Text | QIODevice::Truncate | QIODevice::WriteOnly))
-                {
-                    return;
-                }
-
+                pCue = NULL;
             }
             else
             {
-                pCue->write(QString("%1\n").arg(content.at(i)).toUtf8());
+                ts << content.at(i) << endl; //  pCue->write(QString("%1\n").arg(content.at(i)).toUtf8());
             }
         }
 

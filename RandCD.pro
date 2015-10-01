@@ -19,4 +19,10 @@ HEADERS  += mainwindow.h
 
 FORMS    += mainwindow.ui
 
+win32{
+    INCLUDEPATH += C:/opt/ixtools/include
+    LIBS += -LC:/opt/ixtools/bin
+}
+
 LIBS += -ltag
+
