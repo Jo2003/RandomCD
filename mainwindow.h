@@ -7,6 +7,7 @@
 #include <taglib/tpropertymap.h>
 #include <QtCore/QtGlobal>
 #include <QSettings>
+#include <QStringList>
 
 namespace RandCD
 {
@@ -42,6 +43,7 @@ private:
     Ui::MainWindow *ui;
     RandCD::tagFiles_t tagFiles;
     QSettings* pSet;
+    QStringList m_notUsed;
 };
 
 #endif // MAINWINDOW_H

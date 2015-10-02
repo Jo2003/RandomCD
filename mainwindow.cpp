@@ -83,6 +83,7 @@ QString MainWindow::diskHeader(int numb)
 
 void MainWindow::on_pushOpenFolder_clicked()
 {
+    m_notUsed.clear();
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open MP3 Source Directory"),
                                                     pSet->value("src_dir").toString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
@@ -101,7 +102,7 @@ void MainWindow::on_pushOpenFolder_clicked()
         {
             QString path = QString("%1/%2").arg(mp3Dir.absolutePath()).arg(file);
 
-            ptlFile = new TagLib::MPEG::File(path.toLatin1().constData());
+            ptlFile = new TagLib::MPEG::File(reinterpret_cast<const wchar_t *>(path.utf16()));
 
             if (ptlFile && ptlFile->isOpen())
             {
@@ -109,6 +110,7 @@ void MainWindow::on_pushOpenFolder_clicked()
             }
             else if(ptlFile)
             {
+                m_notUsed.append(path);
                 delete ptlFile;
             }
         }
@@ -149,6 +151,12 @@ void MainWindow::on_pushOpenFolder_clicked()
             tagFiles.remove(curr);
         }
     }
+
+    if (!m_notUsed.isEmpty())
+    {
+        ui->plainTextEdit->appendPlainText("#######################");
+        ui->plainTextEdit->appendPlainText(m_notUsed.join("\n"));
+    }
 }
 
 void MainWindow::on_buttonBox_accepted()
@@ -172,6 +180,12 @@ void MainWindow::on_buttonBox_accepted()
 
         for (int i = 0; i < content.count(); i++)
         {
+            if (content.at(i).contains("#############"))
+            {
+                // end reached
+                break;
+            }
+
             if (!pCue)
             {
                 if ((pCue = new QFile(QString("%1%2.%3").arg(tmpl).arg(++numb).arg(fInfo.suffix()))))
