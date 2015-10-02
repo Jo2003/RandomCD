@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     qsrand(QTime::currentTime().msec());
+    pSet = new QSettings("Jo2003.com", "RamCD", this);
 }
 
 MainWindow::~MainWindow()
@@ -83,10 +84,12 @@ QString MainWindow::diskHeader(int numb)
 void MainWindow::on_pushOpenFolder_clicked()
 {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open MP3 Source Directory"),
-                                                    "~/", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+                                                    pSet->value("src_dir").toString(), QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
     if (!dir.isEmpty())
     {
+        pSet->setValue("src_dir", dir);
+
         ui->lineSrcFolder->setText(dir);
         cleanTags();
 
@@ -150,12 +153,14 @@ void MainWindow::on_pushOpenFolder_clicked()
 
 void MainWindow::on_buttonBox_accepted()
 {
-    QString tmpl = QFileDialog::getSaveFileName(this, tr("Save cue sheet file(s)"), "/home/", "Cue Sheet File (*.cue);;Other File (*.*)");
+    QString tmpl = QFileDialog::getSaveFileName(this, tr("Save cue sheet file(s)"), pSet->value("trg_dir").toString(), "Cue Sheet File (*.cue);;Other File (*.*)");
 
     if (!tmpl.isEmpty())
     {
         // create file name template ...
         QFileInfo fInfo(tmpl);
+
+        pSet->setValue("trg_dir", fInfo.absolutePath());
 
         tmpl = QString("%1/%2_").arg(fInfo.absolutePath()).arg(fInfo.baseName());
 
@@ -181,7 +186,7 @@ void MainWindow::on_buttonBox_accepted()
                     {
                         ts.setDevice(pCue);
                         ts.setCodec("UTF-8");
-                        // ts.setGenerateByteOrderMark(true);
+                        ts.setGenerateByteOrderMark(true);
                     }
                 }
             }
@@ -204,6 +209,8 @@ void MainWindow::on_buttonBox_accepted()
             delete pCue;
         }
     }
+
+    ui->plainTextEdit->clear();
 }
 
 void MainWindow::on_buttonBox_rejected()

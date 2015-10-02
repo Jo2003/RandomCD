@@ -6,6 +6,7 @@
 #include <taglib/mpegfile.h>
 #include <taglib/tpropertymap.h>
 #include <QtCore/QtGlobal>
+#include <QSettings>
 
 namespace RandCD
 {
@@ -40,6 +41,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     RandCD::tagFiles_t tagFiles;
+    QSettings* pSet;
 };
 
 #endif // MAINWINDOW_H
